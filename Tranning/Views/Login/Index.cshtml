@@ -1,0 +1,87 @@
+﻿﻿<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+@model Tranning.Models.LoginModel
+
+@{
+    ViewData["Title"] = "Login Page";
+    Layout = "~/Views/Shared/_MyLayout.cshtml";
+}
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .container {
+        max-width: 400px; 
+        margin: 0 auto;
+        margin-top: 50px; 
+    }
+
+    .my-3 {
+        background-color: #fff; 
+        border: 1px solid #dfe1e5; 
+        padding: 20px;
+        border-radius: 5px; 
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); 
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 10px;
+        background-color: rgb(240, 112, 37); 
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: rgb(240, 112, 37); 
+        }
+
+    .text-danger {
+        color: #dc3545; 
+    }
+
+    
+    .center-img {
+        text-align: center;
+    }
+</style>
+
+@using (Html.BeginForm("Index", "Login", FormMethod.Post, new { @class = "my-3" }))
+{
+    <div class="center-img">
+        <img src="https://btec.fpt.edu.vn/da-nang/cong-nghe-thong-tin/assets/img/logo.png" alt="Your Image" class="img-fluid" style="max-width: 50%;" />
+        <img src="https://melbourne.fpt.edu.vn/wp-content/uploads/2022/01/270166862_468167278122804_4991967473300581357_n.png" alt="Your Image" class="img-fluid" style="width: 227px;height = 109px;" />
+    </div>
+
+    @if (ViewData["MessageLogin"] != null)
+    {
+        <p class="text-danger text-center">
+            @ViewData["MessageLogin"]
+        </p>
+    }
+
+    <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        @Html.TextBoxFor(m => m.Username, new { @class = "form-control", @id = "username" })
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        @Html.PasswordFor(m => m.Password, new { @class = "form-control", @id = "password" })
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+}
