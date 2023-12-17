@@ -3386,11 +3386,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\ducph\\OneDrive\\Desktop\\AD\\AD_ASM\\Tranning\\Tranning.csproj",
+      "projectUniqueName": "D:\\ASM_Done\\ASM2_AD_Evaluation_1ST_TranDucPhuc_BH00113\\Tranning\\Tranning.csproj",
       "projectName": "Tranning",
-      "projectPath": "C:\\Users\\ducph\\OneDrive\\Desktop\\AD\\AD_ASM\\Tranning\\Tranning.csproj",
+      "projectPath": "D:\\ASM_Done\\ASM2_AD_Evaluation_1ST_TranDucPhuc_BH00113\\Tranning\\Tranning.csproj",
       "packagesPath": "C:\\Users\\ducph\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\ducph\\OneDrive\\Desktop\\AD\\AD_ASM\\Tranning\\obj\\",
+      "outputPath": "D:\\ASM_Done\\ASM2_AD_Evaluation_1ST_TranDucPhuc_BH00113\\Tranning\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\ducph\\AppData\\Roaming\\NuGet\\NuGet.Config",

@@ -7,21 +7,20 @@ namespace Tranning.DataDBContext
     public class Topic
     {
         [Key]
-        public int id { get; set; }
+        public long id { get; set; }
 
         [ForeignKey("course_id")]
         public int course_id { get; set; }
-
         [Column("name", TypeName = "Varchar(50)"), Required]
         public string name { get; set; }
 
         [Column("description", TypeName = "Varchar(150)"), AllowNull]
         public string description { get; set; }
-        [Column("videos", TypeName = "Varchar(150)"), AllowNull]
+        [Column("videos", TypeName = "Varchar(500)"), AllowNull]
         public string videos { get; set; }
         [Column("documents", TypeName = "Varchar(150)"), AllowNull]
         public string? documents { get; set; }
-        [Column("attach_file", TypeName = "Varchar(150)"), AllowNull]
+        [Column("attach_file", TypeName = "Varchar(500)"), AllowNull]
         public string attach_file { get; set; }
 
         [Column("status", TypeName = "Varchar(200)"), Required]
@@ -33,7 +32,5 @@ namespace Tranning.DataDBContext
         public DateTime? updated_at { get; set; }
         [AllowNull]
         public DateTime? deleted_at { get; set; }
-
-        public virtual ICollection<TrainerTopic> TrainerTopics { get; set; }
     }
 }

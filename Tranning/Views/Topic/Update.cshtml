@@ -1,10 +1,10 @@
-﻿@model Tranning.Models.TopicDetail
-
+﻿﻿@using Tranning.DataDBContext
+@model Tranning.Models.TopicDetail
 @{
-    ViewData["Title"] = "Update Topic";
+    ViewData["Title"] = "Update topic";
     Layout = "~/Views/Shared/_TrainingStaffLayout.cshtml";
+    var lstCourse = (List<Course>)ViewBag.Course;
 }
-
 <div class="row vh-100">
     <div class="col-sm-12 col-md-12">
         <div class="card">
@@ -12,17 +12,29 @@
                 <h5>Update Topic</h5>
             </div>
             <div class="card-body">
-                <form enctype="multipart/form-data" asp-action="Update" method="post" asp-validation-summary="All">
+                <form enctype="multipart/form-data" asp-controller="Topic" asp-action="Update" method="post" asp-validation-summary="All">
                     <div class="row">
+                        <input type="hidden" asp-for="id" />
                         <div class="col-sm-12 col-md-6">
                             <div class="form-group">
                                 <label asp-for="name">Name</label>
                                 <input asp-for="name" class="form-control" />
                                 <span class="text-danger" asp-validation-for="name"></span>
+                                @if (ViewBag.Error != null)
+                                {
+                                    <span class="text-danger">@ViewBag.Error</span>
+                                }
                             </div>
                             <div class="form-group">
-                                <label asp-for="course_id">Course</label>
-                                <select asp-for="course_id" class="form-control" asp-items="@(new SelectList(ViewBag.Stores, "Value", "Text"))">
+                                <label asp-for="course_id">Course Id</label>
+                                <select asp-for="course_id" class="form-control">
+                                    @if (lstCourse != null && lstCourse.Count > 0)
+                                    {
+                                        foreach (var item in lstCourse)
+                                        {
+                                            <option value="@item.id">@item.name</option>
+                                        }
+                                    }
                                 </select>
                                 <span class="text-danger" asp-validation-for="course_id"></span>
                             </div>
@@ -41,27 +53,26 @@
                                 <span asp-validation-for="status" class="text-danger"></span>
                             </div>
                             <div class="form-group">
-                                <label asp-for="file" class="control-label">Attach File</label>
-                                <input type="file" class="form-control" asp-for="file" />
+                                <label class="control-label">File video</label>
+                                <input type="file" class="form-control" asp-for="fileVideos" />
+                                <span class="text-danger" asp-validation-for="fileVideos"></span>
                             </div>
                             <div class="form-group">
-                                <label asp-for="document_file" class="control-label">Document File</label>
-                                <input type="file" class="form-control" asp-for="document_file" />
+                                <label class="control-label">File ảnh</label>
+                                <input type="file" class="form-control" asp-for="fileImage" />
+                                <span class="text-danger" asp-validation-for="fileImage"></span>
                             </div>
                             <div class="form-group">
-                                <label asp-for="photo" class="control-label">Video</label>
-                                <input type="file" class="form-control" asp-for="photo" />
-                            </div>
-                            <div class="form-group">
-                                <video class="img-fluid" controls><source type="video/mp4" src="/uploads/videos/@Model.videos"></video>
+                                <label class="control-label">File tài liệu</label>
+                                <input type="file" class="form-control" asp-for="fileDocument" />
+                                <span class="text-danger" asp-validation-for="fileDocument"></span>
                             </div>
                         </div>
-                        <div class="row">
-                            <div>
-                                <button class="btn btn-primary" type="submit">Save</button>
-                                <a class="btn btn-info" href="@Url.Action("Index","Topic")">Back to lists</a>
-                            </div>
+                        <div class="sm-12 col-md-6">
+                            <button class="btn btn-primary my-3" type="submit">Update</button>
+                            <a class="btn btn-info ms-3 mb-0" href="@Url.Action("Index","Topic")">Back to lists</a>
                         </div>
+                    </div>
                 </form>
             </div>
         </div>

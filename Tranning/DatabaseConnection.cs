@@ -8,7 +8,7 @@ namespace Tranning
 
         public static SqlConnection GetSqlConnection()
         {
-            string connectionString = "Server=DUK-FUC;Database=ASMTraining;Trusted_Connection=True;TrustServerCertificate=True";
+            string connectionString = "Server=DUK-FUC;Database=Tranning;Trusted_Connection=True;TrustServerCertificate=True";
             SqlConnection connection = new SqlConnection(connectionString);
             return connection;
         }

@@ -1,11 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Tranning.DataDBContext;
 using Tranning.Models;
 
@@ -14,401 +7,218 @@ namespace Tranning.Controllers
     public class TopicController : Controller
     {
         private readonly TranningDBContext _dbContext;
-        private readonly ILogger<TopicController> _logger;
-
-        public TopicController(TranningDBContext context, ILogger<TopicController> logger)
+        public TopicController(TranningDBContext dbContext)
         {
-            _dbContext = context;
-            _logger = logger;
+            _dbContext = dbContext;
         }
-
         [HttpGet]
-        public IActionResult Index(string SearchString)
+        public IActionResult Index()
         {
-            var data = _dbContext.Topics
-                .Where(m => m.deleted_at == null)
-                .Join(
-                    _dbContext.Courses,
-                    topic => topic.course_id,
-                    course => course.id,
-                    (topic, course) => new TopicDetail
-                    {
-                        course_id = topic.course_id,
-                        courseName = course.name, // Add this line to include the course name
-                        id = topic.id,
-                        name = topic.name,
-                        description = topic.description,
-                        videos = topic.videos,
-                        status = topic.status,
-                        attach_file = topic.attach_file,
-                        documents = topic.documents,
-                        created_at = topic.created_at,
-                        updated_at = topic.updated_at
-                    })
-                .ToList();
-
-            // Apply additional search filter if needed
-            if (!string.IsNullOrEmpty(SearchString))
-            {
-                data = data.Where(m => m.name.Contains(SearchString) || m.description.Contains(SearchString)).ToList();
-            }
-
-            TopicModel topicModel = new TopicModel();
-            topicModel.TopicDetailLists = data;
-
-            return View(topicModel);
-        }
-
-
-        [HttpGet]
-        public IActionResult TrainerIndex(string SearchString)
-        {
-            var data = _dbContext.Topics
-                .Where(m => m.deleted_at == null)
-                .Select(item => new TopicDetail
+            List<TopicMapping> model = new List<TopicMapping>();
+            var data = _dbContext.Topics.Join(_dbContext.Courses,
+                t => t.course_id,
+                c => c.id,
+                (t, c) => new TopicMapping
                 {
-                    course_id = item.course_id,
-                    id = item.id,
-                    name = item.name,
-                    description = item.description,
-                    videos = item.videos,
-                    status = item.status,
-                    attach_file = item.attach_file,
-                    documents = item.documents,
-                    created_at = item.created_at,
-                    updated_at = item.updated_at
-                })
-                .ToList();
-
-            // Apply additional search filter if needed
-            if (!string.IsNullOrEmpty(SearchString))
-            {
-                data = data.Where(m => m.name.Contains(SearchString) || m.description.Contains(SearchString)).ToList();
-            }
-
-            TopicModel topicModel = new TopicModel();
-            topicModel.TopicDetailLists = data;
-
-            return View(topicModel);
+                    course_id = t.course_id,
+                    id = t.id,
+                    name = t.name,
+                    description = t.description,
+                    videos = t.videos,
+                    status = t.status,
+                    attach_file = t.attach_file,
+                    documents = t.documents,
+                    created_at = t.created_at,
+                    updated_at = t.updated_at,
+                    CourseName = c.name
+                }).ToList();
+            model = data;
+            return View(model);
         }
-
-
         [HttpGet]
         public IActionResult Add()
         {
             TopicDetail topic = new TopicDetail();
-            PopulateCategoryDropdown();
-            PopulateCategoryDropdown1();
+            ViewBag.Course = _dbContext.Courses.ToList();
             return View(topic);
         }
-
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add(TopicDetail topic)
+        [RequestSizeLimit(104857600)]
+        public IActionResult Add(TopicDetail topic)
         {
+            ViewBag.Course = _dbContext.Courses.ToList();
             try
             {
-                if (ModelState.IsValid)
+                string imagePhoto = UploadFile(topic.fileImage);
+                string fileVideos = UploadVideos(topic.fileVideos);
+                string fileDocument = string.Empty;
+                if (topic.fileDocument != null)
                 {
-                    try
-                    {
-                        string VideoFileName = await UploadVideo(topic.photo);
-                        string AttachFileName = await UploadAttachFile(topic.file);
-                        string DocumentName = await UploadDocuments(topic.document_file);
-                        var topicData = new Topic()
-                        {
-                            course_id = topic.course_id,
-                            name = topic.name,
-                            description = topic.description,
-                            videos = VideoFileName,
-                            status = topic.status,
-                            documents = DocumentName,
-                            attach_file = AttachFileName,
-                            created_at = DateTime.Now
-                        };
-
-                        _dbContext.Topics.Add(topicData);
-                        _dbContext.SaveChanges();
-                        TempData["saveStatus"] = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "An error occurred while processing a valid model state.");
-                        TempData["saveStatus"] = false;
-                    }
-                    return RedirectToAction(nameof(Index));
+                    fileDocument = UploadFile(topic.fileDocument);
                 }
-
-                foreach (var modelState in ModelState.Values)
+                var topicData = new Topic()
                 {
-                    foreach (var error in modelState.Errors)
-                    {
-                        _logger.LogError($"ModelState Error: {error.ErrorMessage}");
-                    }
-                }
-
-                PopulateCategoryDropdown();
-                PopulateCategoryDropdown1();
-                return View(topic);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An unexpected error occurred while processing the request.");
-                TempData["saveStatus"] = false;
+                    course_id = topic.course_id,
+                    name = topic.name,
+                    description = topic.description,
+                    videos = fileVideos,
+                    status = topic.status,
+                    documents = fileDocument,
+                    attach_file = imagePhoto,
+                    created_at = DateTime.Now
+                };
+                _dbContext.Topics.Add(topicData);
+                _dbContext.SaveChanges();
                 return RedirectToAction(nameof(Index));
             }
-        }
-
-        private async Task<string> UploadVideo(IFormFile file)
-        {
-            string VideoFileName;
-            try
-            {
-                string pathUploadServer = "wwwroot\\uploads\\videos";
-                string videoName = file.FileName;
-                videoName = Path.GetFileName(videoName);
-                string uniqueStr = Guid.NewGuid().ToString();
-                videoName = uniqueStr + "-" + videoName;
-                string uploadPath = Path.Combine(Directory.GetCurrentDirectory(), pathUploadServer, videoName);
-                var stream = new FileStream(uploadPath, FileMode.Create);
-                await file.CopyToAsync(stream);
-                VideoFileName = videoName;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during file upload.");
-                VideoFileName = ex.Message.ToString();
+                ViewBag.Error = "Có lỗi xảy ra.Vui lòng thử lại";
+                return View(topic);
             }
-            return VideoFileName;
         }
-        private async Task<string> UploadAttachFile(IFormFile file)
+        private string UploadFile(IFormFile file)
         {
-            string AttachFileName;
+            string filePath = string.Empty;
             try
             {
-                string pathUploadServer = "wwwroot\\uploads\\attachfiles";
-                string attachfileName = file.FileName;
-                attachfileName = Path.GetFileName(attachfileName);
-                string uploadPath = Path.Combine(Directory.GetCurrentDirectory(), pathUploadServer, attachfileName);
-                var stream = new FileStream(uploadPath, FileMode.Create);
-                await file.CopyToAsync(stream);
-                AttachFileName = attachfileName;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during file upload.");
-                AttachFileName = ex.Message.ToString();
-            }
-            return AttachFileName;
-        }
-
-        private async Task<string> UploadDocuments(IFormFile file)
-        {
-            string DocumentFileName;
-            try
-            {
-                string pathUploadServer = "wwwroot\\uploads\\documents";
-                string documentName = file.FileName;
-                documentName = Path.GetFileName(documentName);
-                string uploadPath = Path.Combine(Directory.GetCurrentDirectory(), pathUploadServer, documentName);
-                var stream = new FileStream(uploadPath, FileMode.Create);
-                await file.CopyToAsync(stream);
-                DocumentFileName = documentName;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during file upload.");
-                DocumentFileName = ex.Message.ToString();
-            }
-            return DocumentFileName;
-        }
-
-        private void PopulateCategoryDropdown()
-        {
-            try
-            {
-                var courses = _dbContext.Courses
-                    .Where(m => m.deleted_at == null)
-                    .Select(m => new SelectListItem { Value = m.id.ToString(), Text = m.name })
-                    .ToList();
-
-                if (courses != null)
+                if (file != null)
                 {
-                    ViewBag.Stores = courses;
-                }
-                else
-                {
-                    _logger.LogError("Course is null");
-                    ViewBag.Stores = new List<SelectListItem>();
+                    string pathUploadImage = "wwwroot\\uploads\\images";
+                    string fileName = file.FileName;
+                    fileName = Path.GetFileName(fileName);
+                    string uniqueStr = Guid.NewGuid().ToString();
+                    fileName = uniqueStr + "-" + fileName;
+                    if (!Directory.Exists(pathUploadImage))
+                    {
+                        Directory.CreateDirectory(pathUploadImage);
+                    }
+                    string uploadPath = Path.Combine(Directory.GetCurrentDirectory(), pathUploadImage, fileName);
+                    var stream = new FileStream(uploadPath, FileMode.Create);
+                    file.CopyToAsync(stream);
+                    filePath = fileName;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while populating category dropdown.");
-                ViewBag.Stores = new List<SelectListItem>();
-            }
-        }
 
-        private void PopulateCategoryDropdown1()
+            }
+            return filePath;
+        }
+        //[RequestSizeLimit(104857600)]
+        private string UploadVideos(IFormFile file)
         {
+            string filePath = string.Empty;
             try
             {
-                var users = _dbContext.Users
-                    .Where(m => m.deleted_at == null && m.role_id == 3)
-                    .Select(m => new SelectListItem { Value = m.id.ToString(), Text = m.full_name })
-                    .ToList();
-
-                if (users != null)
+                if (file != null)
                 {
-                    ViewBag.Stores1 = users;
-                }
-                else
-                {
-                    _logger.LogError("User is null");
-                    ViewBag.Stores1 = new List<SelectListItem>();
+                    string pathUploadVideos = "wwwroot\\uploads\\videos";
+                    string fileName = file.FileName;
+                    fileName = Path.GetFileName(fileName);
+                    string uniqueStr = Guid.NewGuid().ToString();
+                    fileName = uniqueStr + "-" + fileName;
+                    if (!Directory.Exists(pathUploadVideos))
+                    {
+                        Directory.CreateDirectory(pathUploadVideos);
+                    }
+                    string uploadPath = Path.Combine(Directory.GetCurrentDirectory(), pathUploadVideos, fileName);
+                    var stream = new FileStream(uploadPath, FileMode.Create);
+                    file.CopyToAsync(stream);
+                    filePath = fileName;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while populating category dropdown.");
-                ViewBag.Stores1 = new List<SelectListItem>();
+
             }
+            return filePath;
         }
         [HttpGet]
-        public IActionResult Delete(int id = 0)
+        public IActionResult Update(long id)
         {
-            try
-            {
-                var data = _dbContext.Topics.FirstOrDefault(m => m.id == id);
-
-                if (data != null)
-                {
-                    // Soft delete by updating the deleted_at field
-                    data.deleted_at = DateTime.Now;
-                    _dbContext.SaveChanges();
-                    TempData["DeleteStatus"] = true;
-                }
-                else
-                {
-                    TempData["DeleteStatus"] = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                TempData["DeleteStatus"] = false;
-                // Log the exception if needed: _logger.LogError(ex, "An error occurred while deleting the topic.");
-            }
-
-            return RedirectToAction(nameof(Index), new { SearchString = "" });
-        }
-        [HttpGet]
-        public IActionResult Update(int id = 0)
-        {
-            var data = _dbContext.Topics.FirstOrDefault(m => m.id == id);
-
+            ViewBag.Course = _dbContext.Courses.ToList();
+            TopicDetail topic = new TopicDetail();
+            var data = _dbContext.Topics.Find(id);
             if (data != null)
             {
-                // Set ViewBag.Stores to populate the dropdown in the view
-                PopulateCategoryDropdown();
-                PopulateCategoryDropdown1();
-
-                // Map the data to the TopicDetail model
-                var topic = new TopicDetail
-                {
-                    id = data.id,
-                    course_id = data.course_id,
-                    name = data.name,
-                    description = data.description,
-                    videos = data.videos,
-                    documents = data.documents,
-                    attach_file = data.attach_file,
-                    status = data.status
-                    // Map other properties as needed
-                };
-
-                return View(topic);
+                topic.id = data.id;
+                topic.course_id = data.course_id;
+                topic.name = data.name;
+                topic.description = data.description;
+                topic.videos = data.videos;
+                topic.status = data.status;
+                topic.documents = data.documents;
+                topic.attach_file = data.attach_file;
             }
-            else
-            {
-                TempData["UpdateStatus"] = false;
-                return RedirectToAction(nameof(Index));
-            }
+            return View(topic);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Update(TopicDetail topic, IFormFile file)
+        [RequestSizeLimit(104857600)]
+        public IActionResult Update(TopicDetail topic)
         {
+            ViewBag.Course = _dbContext.Courses.ToList();
             try
             {
-                if (ModelState.IsValid)
+                var data = _dbContext.Topics.Find(topic.id);
+                if (data != null)
                 {
-                    // Retrieve the existing topic data from the database
-                    var data = _dbContext.Topics.FirstOrDefault(m => m.id == topic.id);
-
-                    if (data != null)
+                    string imagePhoto = UploadFile(topic.fileImage);
+                    string fileVideos = UploadVideos(topic.fileVideos);
+                    string fileDocument = string.Empty;
+                    if (topic.fileDocument != null)
                     {
-                        // Preserve the old information
-                        // Assign the old information to the TopicDetail object
-                        topic.course_id = data.course_id;
-                        topic.videos = data.videos;
-                        topic.documents = data.documents;
-                        topic.attach_file = data.attach_file;
-                        topic.status = data.status;
-
-                        // Update fields with new information from the submitted model
-                        data.name = topic.name;
-                        data.description = topic.description;
-                        data.status = topic.status;
-                        data.course_id = topic.course_id;
-
-                        // Update the file fields if a new file is provided
-                        if (topic.file != null)
-                        {
-                            data.attach_file = await UploadAttachFile(topic.file);
-                        }
-
-                        if (topic.photo != null)
-                        {
-                            data.videos = await UploadVideo(topic.photo);
-                        }
-
-                        if (topic.document_file != null)
-                        {
-                            data.documents = await UploadDocuments(topic.document_file);
-                        }
-
-                        // Update the timestamp
-                        data.updated_at = DateTime.Now;
-
-                        // Save changes to the database
-                        _dbContext.SaveChanges();
-
-                        TempData["UpdateStatus"] = true;
-                        return RedirectToAction(nameof(TopicController.Index), "Topic");
+                        fileDocument = UploadFile(topic.fileDocument);
                     }
-                    else
-                    {
-                        TempData["UpdateStatus"] = false;
-                        // Handle the case where the topic with the specified ID is not found
-                    }
+                    data.course_id = topic.course_id;
+                    data.name = topic.name;
+                    data.updated_at = DateTime.Now;
+                    data.description = topic.description;
+                    data.videos = (!string.IsNullOrEmpty(fileVideos) ? fileVideos : data.videos);
+                    data.status = topic.status;
+                    data.documents = (!string.IsNullOrEmpty(fileDocument) ? fileDocument : data.documents);
+                    data.attach_file = (!string.IsNullOrEmpty(imagePhoto) ? imagePhoto : data.attach_file);
+                    data.created_at = DateTime.Now;
+                    _dbContext.SaveChanges();
+                    return RedirectToAction(nameof(Index));
                 }
-
-                // If ModelState is not valid, repopulate the dropdown and return to the view
-                PopulateCategoryDropdown();
-                PopulateCategoryDropdown1();
-                return View(topic);
+                else
+                {
+                    ViewBag.Error = "Cập nhật thông tin không thành công";
+                    return View(topic);
+                }
             }
             catch (Exception ex)
             {
-                TempData["UpdateStatus"] = false;
-                // Log the exception if needed: _logger.LogError(ex, "An error occurred while updating the topic.");
-                return RedirectToAction(nameof(Index));
+                ViewBag.Error = "Có lỗi xảy ra.Vui lòng thử lại";
+                return View(topic);
             }
         }
-
-
-
+        [HttpGet]
+        public IActionResult Delete(long id)
+        {
+            try
+            {
+                var data = _dbContext.Topics.Find(id);
+                if (data != null)
+                {
+                    // Use Remove method to delete the entity
+                    _dbContext.Topics.Remove(data);
+                    _dbContext.SaveChanges();
+                    TempData["DeleteTopic"] = true;
+                }
+                else
+                {
+                    TempData["DeleteTopic"] = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["DeleteTopic"] = false;
+            }
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

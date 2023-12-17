@@ -1,0 +1,72 @@
+﻿﻿@using Tranning.DataDBContext
+@model Trainner_topic
+
+@{
+    ViewData["Title"] = "CreateOrEdit";
+    Layout = "~/Views/Shared/_TrainingStaffLayout.cshtml";
+    var lstTopic = (List<Topic>)ViewBag.Topic;
+    string titleH = string.Empty;
+    if (Model.trainner_id > 0)
+    {
+        titleH = "Update Trainner Topic";
+    }
+    else
+    {
+        titleH = "Add New Trainner Topic";
+    }
+    var lstTrainner = (List<User>)ViewBag.Trainner;
+}
+<div class="row vh-100">
+    <div class="col-sm-12 col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>@titleH</h5>
+            </div>
+            <div class="card-body">
+                <form enctype="multipart/form-data" asp-controller="Trainnertopic" asp-action="CreateOrEdit" method="post" asp-validation-summary="All">
+                    <input type="hidden" asp-for="trainner_id" />
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                @if (ViewBag.Error != null)
+                                {
+                                    <span class="text-danger">@ViewBag.Error</span>
+                                }
+                            </div>
+                            <div class="form-group">
+                                <label asp-for="topic_id">Topic</label>
+                                <select asp-for="topic_id" class="form-control">
+                                    @if (lstTopic != null && lstTopic.Count > 0)
+                                    {
+                                        foreach (var item in lstTopic)
+                                        {
+                                            <option value="@item.id">@item.name</option>
+                                        }
+                                    }
+                                </select>
+                                <span class="text-danger" asp-validation-for="topic_id"></span>
+                            </div>
+                            <div class="form-group">
+                                <label asp-for="userid">Trainner</label>
+                                <select asp-for="userid" class="form-control">
+                                    @if (lstTrainner != null && lstTrainner.Count > 0)
+                                    {
+                                        foreach (var item in lstTrainner)
+                                        {
+                                            <option value="@item.id">@item.full_name</option>
+                                        }
+                                    }
+                                </select>
+                                <span class="text-danger" asp-validation-for="userid"></span>
+                            </div>
+                        </div>
+                        <div class="sm-12 col-md-12">
+                            <button class="btn btn-primary my-3" type="submit">Save</button>
+                            <a class="btn btn-info ms-3 mb-0" href="@Url.Action("Index","Trainnertopic")">Back to lists</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
